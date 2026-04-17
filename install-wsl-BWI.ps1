@@ -48,6 +48,7 @@ Update-WSLSystem -DistributionNickname $DistributionNickname
 
 # install tools
 Install-Tool -DistributionNickname $DistributionNickname -Tools @("git", "curl")
+Install-Tool-PWSH -DistributionNickname $DistributionNickname
 
 # Create WSL user with same name as current Windows user
 New-WSLUser -DistributionNickname $DistributionNickname -Username $($env:USERNAME) -SecString $SecString

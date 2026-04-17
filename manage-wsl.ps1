@@ -123,6 +123,34 @@ function Install-Tool {
     }
 }
 
+function Install-Tool-PWSH {
+    [OutputType([void])]
+    param(
+        [string]$DistributionNickname
+    )
+    # install-pwsh.ps1 (quiet)
+    $latest = Invoke-RestMethod https://api.github.com/repos/PowerShell/PowerShell/releases/latest
+    $version = $latest.tag_name -replace '^v'
+    $url = "https://github.com/PowerShell/PowerShell/releases/download/$($latest.tag_name)/powershell_${version}-1.deb_amd64.deb"
+
+    $content = @"
+curl -s -L -o pwsh.deb '$url' > /dev/null 2>&1 &&
+dpkg -i --force-depends pwsh.deb &&
+sed -i '/Package: powershell/,/Depends:/s/libicu74[^;]*;/libicu76;/g' /var/lib/dpkg/status &&
+apt-get install -f -y > /dev/null 2>&1 &&
+rm pwsh.deb &&
+echo "✅ PowerShell ${version} installed"
+"@ -replace "`r`n", "`n" -replace "`r", ""
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+    [System.IO.File]::WriteAllBytes("pwsh-update.sh", $bytes)
+
+    wsl -d $DistributionNickname -u root -- bash pwsh-update.sh > $null 2>&1
+    Remove-Item pwsh-update.sh -Force -ErrorAction SilentlyContinue
+    Write-Host "PowerShell Update abgeschlossen" -ForegroundColor Green
+}
+
+
 # Function to update and upgrade WSL system
 function Update-WSLSystem {
     [CmdletBinding(SupportsShouldProcess)]
