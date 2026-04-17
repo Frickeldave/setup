@@ -131,6 +131,7 @@ function Install-Tool-PWSH {
     # install-pwsh.ps1 (quiet)
     $latest = Invoke-RestMethod https://api.github.com/repos/PowerShell/PowerShell/releases/latest
     $version = $latest.tag_name -replace '^v'
+    Write-Host "Downloading PowerShell $version" -ForegroundColor Cyan
     $url = "https://github.com/PowerShell/PowerShell/releases/download/$($latest.tag_name)/powershell_${version}-1.deb_amd64.deb"
 
     $content = @"
@@ -145,6 +146,7 @@ echo "✅ PowerShell ${version} installed"
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
     [System.IO.File]::WriteAllBytes("pwsh-update.sh", $bytes)
 
+    Write-Host "Executing installation script" -ForegroundColor Cyan
     wsl -d $DistributionNickname -u root -- bash pwsh-update.sh > $null 2>&1
     Remove-Item pwsh-update.sh -Force -ErrorAction SilentlyContinue
     Write-Host "PowerShell Update abgeschlossen" -ForegroundColor Green

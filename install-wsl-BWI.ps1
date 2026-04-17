@@ -47,7 +47,7 @@ if (-not $distributionInstalled) {
 Update-WSLSystem -DistributionNickname $DistributionNickname
 
 # install tools
-Install-Tool -DistributionNickname $DistributionNickname -Tools @("git", "curl")
+Install-Tool -DistributionNickname $DistributionNickname -Tools @("git", "curl", "python3")
 Install-Tool-PWSH -DistributionNickname $DistributionNickname
 
 # Create WSL user with same name as current Windows user
