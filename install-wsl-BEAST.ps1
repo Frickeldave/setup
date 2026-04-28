@@ -57,6 +57,7 @@ Install-Tool-Node -DistributionNickname $DistributionNickname -Username $($env:U
 Install-Tool-ClaudeCode -DistributionNickname $DistributionNickname -Username $($env:USERNAME) -GitPat $GitPat
 Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command "cd ~; mkdir dev; cd dev; git clone -q https://${GitUser}:${GitPat}@github.com/${GitUser}/BEAST.git" -CommandDescription "Clone BEAST git repo" -User $($env:USERNAME)
 Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command 'cd ~/dev/BEAST && npm install --silent 2>&1 | grep -v "^npm notice"' -CommandDescription "npm install in BEAST" -User $($env:USERNAME)
+Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command 'cd ~/dev/BEAST && npx playwright install chromium' -CommandDescription "Install Playwright Chromium in BEAST" -User $($env:USERNAME)
 
 Write-Host "$(Get-Timestamp) WSL configuration completed!" -ForegroundColor Green
 Write-Host "$(Get-Timestamp) You can now work with the '$DistributionNickname' distribution." -ForegroundColor Cyan
