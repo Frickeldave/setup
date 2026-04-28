@@ -114,7 +114,11 @@ function Install-Tool {
         foreach ($tool in $Tools) {
             Write-Host "$(Get-Timestamp) Installing $tool..." -ForegroundColor Cyan
             wsl -d $DistributionNickname -u root -- bash -lc "apt-get update && apt-get install -y $tool" 2>&1 | Out-Null
-            Write-Host "$(Get-Timestamp) $tool installed successfully." -ForegroundColor Green
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "$(Get-Timestamp) Failed to install $tool (exit code $LASTEXITCODE)."
+            } else {
+                Write-Host "$(Get-Timestamp) $tool installed successfully." -ForegroundColor Green
+            }
         }
         
         Write-Host "$(Get-Timestamp) All tools installed." -ForegroundColor Green
@@ -180,8 +184,12 @@ echo "✅ PowerShell ${version} installed"
 
     Write-Host "$(Get-Timestamp) Executing installation script" -ForegroundColor Cyan
     wsl -d $DistributionNickname -u root -- bash pwsh-update.sh > $null 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "$(Get-Timestamp) PowerShell installation may have failed (exit code $LASTEXITCODE)."
+    } else {
+        Write-Host "$(Get-Timestamp) PowerShell Update abgeschlossen" -ForegroundColor Green
+    }
     Remove-Item pwsh-update.sh -Force -ErrorAction SilentlyContinue
-    Write-Host "$(Get-Timestamp) PowerShell Update abgeschlossen" -ForegroundColor Green
 }
 
 function Install-Tool-Docker {
@@ -207,8 +215,79 @@ echo "✅ Docker installed successfully"
 
     Write-Host "$(Get-Timestamp) Executing Docker installation script" -ForegroundColor Cyan
     wsl -d $DistributionNickname -u root -- bash docker-install.sh > $null 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "$(Get-Timestamp) Docker installation may have failed (exit code $LASTEXITCODE)."
+    } else {
+        Write-Host "$(Get-Timestamp) Docker installation completed" -ForegroundColor Green
+    }
     Remove-Item docker-install.sh -Force -ErrorAction SilentlyContinue
-    Write-Host "$(Get-Timestamp) Docker installation completed" -ForegroundColor Green
+}
+
+function Install-Tool-Node {
+    [OutputType([void])]
+    param(
+        [string]$DistributionNickname,
+        [Parameter(Mandatory)]
+        [string]$Username
+    )
+
+    Write-Host "$(Get-Timestamp) Installing nvm..." -ForegroundColor Cyan
+    wsl -d $DistributionNickname -u $Username -- bash -lc "curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash > /dev/null 2>&1"
+
+    $content = @'
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm install --lts > /dev/null 2>&1
+nvm use --lts > /dev/null 2>&1
+# Make nvm available in non-interactive login shells (bash -lc)
+grep -qF 'NVM_DIR' ~/.profile || printf '\nexport NVM_DIR="$HOME/.nvm"\n[ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh"\n' >> ~/.profile
+'@ -replace "`r`n", "`n" -replace "`r", ""
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+    [System.IO.File]::WriteAllBytes("nvm-node-install.sh", $bytes)
+
+    Write-Host "$(Get-Timestamp) Installing Node.js LTS via nvm..." -ForegroundColor Cyan
+    wsl -d $DistributionNickname -u $Username -- bash nvm-node-install.sh 2>&1 | Where-Object { $_ -ne '' }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "$(Get-Timestamp) Node.js installation may have failed (exit code $LASTEXITCODE)."
+    } else {
+        Write-Host "$(Get-Timestamp) Node.js installation completed." -ForegroundColor Green
+    }
+    Remove-Item nvm-node-install.sh -Force -ErrorAction SilentlyContinue
+}
+
+function Install-Tool-ClaudeCode {
+    [OutputType([void])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$DistributionNickname,
+        [Parameter(Mandatory)]
+        [string]$Username,
+        [Parameter(Mandatory)]
+        [string]$GitPat,
+        [switch]$InstallMCPGitHub
+    )
+
+    $mcpCmd = if ($InstallMCPGitHub) { "`nclaude mcp add github -- docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server" } else { "" }
+    $content = @"
+curl -fsSL https://claude.ai/install.sh | bash
+echo 'export PATH="`$HOME/.local/bin:`$PATH"' >> ~/.bashrc
+echo 'export CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1' >> ~/.bashrc
+echo 'export GITHUB_PERSONAL_ACCESS_TOKEN=$GitPat' >> ~/.bashrc
+source ~/.bashrc$mcpCmd
+"@ -replace "`r`n", "`n" -replace "`r", ""
+
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+    [System.IO.File]::WriteAllBytes("claude-code-install.sh", $bytes)
+
+    Write-Host "$(Get-Timestamp) Installing Claude Code..." -ForegroundColor Cyan
+    wsl -d $DistributionNickname -u $Username -- bash claude-code-install.sh > $null 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "$(Get-Timestamp) Claude Code installation may have failed (exit code $LASTEXITCODE)."
+    } else {
+        Write-Host "$(Get-Timestamp) Claude Code installation completed." -ForegroundColor Green
+    }
+    Remove-Item claude-code-install.sh -Force -ErrorAction SilentlyContinue
 }
 
 # Function to update and upgrade WSL system

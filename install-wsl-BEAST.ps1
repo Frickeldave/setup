@@ -46,32 +46,17 @@ if (-not $distributionInstalled) {
 # Update and upgrade WSL system
 Update-WSLSystem -DistributionNickname $DistributionNickname
 
+# Create WSL user with same name as current Windows user
+New-WSLUser -DistributionNickname $DistributionNickname -Username $($env:USERNAME) -SecString $SecString
+
 # install tools
 Install-Tool -DistributionNickname $DistributionNickname -Tools @("git", "curl", "python3", "ca-certificates", "gnupg", "chromium")
 Install-Tool-PWSH -DistributionNickname $DistributionNickname
 Install-Tool-Docker -DistributionNickname $DistributionNickname
-
-# Create WSL user with same name as current Windows user
-New-WSLUser -DistributionNickname $DistributionNickname -Username $($env:USERNAME) -SecString $SecString
-
+Install-Tool-Node -DistributionNickname $DistributionNickname -Username $($env:USERNAME)
+Install-Tool-ClaudeCode -DistributionNickname $DistributionNickname -Username $($env:USERNAME) -GitPat $GitPat
 Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command "cd ~; mkdir dev; cd dev; git clone -q https://${GitUser}:${GitPat}@github.com/${GitUser}/BEAST.git" -CommandDescription "Clone BEAST git repo" -User $($env:USERNAME)
-Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command "curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash > /dev/null 2>&1" -CommandDescription "Install nvm" -User $($env:USERNAME)
-
-# Install Node LTS and project dependencies via nvm using a temp script
-$nvm_node_install = @'
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install --lts > /dev/null 2>&1
-nvm use --lts > /dev/null 2>&1
-cd ~/dev/BEAST && npm install --silent 2>&1 | grep -v "^npm notice"
-'@ -replace "`r`n", "`n" -replace "`r", "`n"
-
-$nvmBytes = [System.Text.Encoding]::UTF8.GetBytes($nvm_node_install)
-[System.IO.File]::WriteAllBytes("nvm-node-install.sh", $nvmBytes)
-Write-Host "$(Get-Timestamp) Installing Node.js LTS via nvm and running npm install..." -ForegroundColor Cyan
-wsl -d $DistributionNickname -u $($env:USERNAME) -- bash nvm-node-install.sh 2>&1 | Where-Object { $_ -ne '' }
-Remove-Item nvm-node-install.sh -Force -ErrorAction SilentlyContinue
-Write-Host "$(Get-Timestamp) Node.js and npm install completed." -ForegroundColor Green
+Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command 'cd ~/dev/BEAST && npm install --silent 2>&1 | grep -v "^npm notice"' -CommandDescription "npm install in BEAST" -User $($env:USERNAME)
 
 Write-Host "$(Get-Timestamp) WSL configuration completed!" -ForegroundColor Green
 Write-Host "$(Get-Timestamp) You can now work with the '$DistributionNickname' distribution." -ForegroundColor Cyan
