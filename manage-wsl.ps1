@@ -135,9 +135,10 @@ function Install-Tool {
 function Install-Docker {
     [OutputType([void])]
     param(
-        [string]$DistributionNickname
+        [string]$DistributionNickname,
+        [string]$Username
     )
-    
+
     # Use single-quoted here-string to preserve shell variables and command substitutions
     $content = @'
 sudo install -m 0755 -d /etc/apt/keyrings &&
@@ -148,7 +149,10 @@ sudo apt update &&
 sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y &&
 sudo usermod -aG docker $USER &&
 echo "✅ Docker installed successfully"
-'@ -replace "`r`n", "`n" -replace "`r", ""
+'@
+    # Replace placeholder with actual username since script runs as root
+    $content = $content -replace '\$USER', $Username
+    $content = $content -replace "`r`n", "`n" -replace "`r", ""
 
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
     [System.IO.File]::WriteAllBytes("docker-install.sh", $bytes)
@@ -195,9 +199,11 @@ echo "✅ PowerShell ${version} installed"
 function Install-Tool-Docker {
     [OutputType([void])]
     param(
-        [string]$DistributionNickname
+        [string]$DistributionNickname,
+        [Parameter(Mandatory)]
+        [string]$Username
     )
-    
+
     # Use single-quoted here-string to preserve shell variables and command substitutions
     $content = @'
 sudo install -m 0755 -d /etc/apt/keyrings &&
@@ -208,7 +214,10 @@ sudo apt update &&
 sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y &&
 sudo usermod -aG docker $USER &&
 echo "✅ Docker installed successfully"
-'@ -replace "`r`n", "`n" -replace "`r", ""
+'@
+    # Replace placeholder with actual username since script runs as root
+    $content = $content -replace '\$USER', $Username
+    $content = $content -replace "`r`n", "`n" -replace "`r", ""
 
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
     [System.IO.File]::WriteAllBytes("docker-install.sh", $bytes)

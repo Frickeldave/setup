@@ -52,7 +52,7 @@ New-WSLUser -DistributionNickname $DistributionNickname -Username $($env:USERNAM
 # install tools
 Install-Tool -DistributionNickname $DistributionNickname -Tools @("git", "curl", "python3", "ca-certificates", "gnupg", "chromium")
 Install-Tool-PWSH -DistributionNickname $DistributionNickname
-Install-Tool-Docker -DistributionNickname $DistributionNickname
+Install-Tool-Docker -DistributionNickname $DistributionNickname -Username $($env:USERNAME)
 Install-Tool-Node -DistributionNickname $DistributionNickname -Username $($env:USERNAME)
 Install-Tool-ClaudeCode -DistributionNickname $DistributionNickname -Username $($env:USERNAME) -GitPat $GitPat
 Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command "cd ~; mkdir dev; cd dev; git clone -q https://${GitUser}:${GitPat}@github.com/${GitUser}/BEAST.git" -CommandDescription "Clone BEAST git repo" -User $($env:USERNAME)
