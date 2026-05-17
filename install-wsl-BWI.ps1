@@ -51,7 +51,7 @@ Install-Tool -DistributionNickname $DistributionNickname -Tools @("git", "curl",
 Install-Tool-PWSH -DistributionNickname $DistributionNickname
 
 # Create WSL user with same name as current Windows user
-New-WSLUser -DistributionNickname $DistributionNickname -Username $($env:USERNAME) -SecString $SecString
+New-WSLUser -DistributionNickname $DistributionNickname -Username $($env:USERNAME) -SecString $SecString -AddToSudoers -SetAsDefault
 
 Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command "cd ~; mkdir dev; cd dev; git clone https://${GitUser}:${GitPat}@github.com/${GitUser}/sppmodules.git" -CommandDescription "Clone git repo sppmodules" -User $($env:USERNAME)
 

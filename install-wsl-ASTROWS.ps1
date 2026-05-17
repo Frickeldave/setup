@@ -1,5 +1,9 @@
 param(
     [Parameter(Mandatory)]
+    [string]$GitUser,
+    [Parameter(Mandatory)]
+    [string]$GitPat,
+    [Parameter(Mandatory)]
     [string]$Username,
     [Parameter(Mandatory)]
     [string]$SecString,
@@ -9,7 +13,7 @@ param(
 . .\manage-wsl.ps1
 
 $DistributionName = "Debian"
-$DistributionNickname = "BMW-MO2"
+$DistributionNickname = "ASTROWS"
 
 # Check if WSL is installed
 if (-not (Test-WSLInstalled)) {
@@ -42,14 +46,17 @@ if (-not $distributionInstalled) {
 # Update and upgrade WSL system
 Update-WSLSystem -DistributionNickname $DistributionNickname
 
-# install tools
-Install-Tool -DistributionNickname $DistributionNickname -Tools @("git", "curl")
-
 # Create WSL user with same name as current Windows user
 New-WSLUser -DistributionNickname $DistributionNickname -Username $($env:USERNAME) -SecString $SecString -AddToSudoers -SetAsDefault
 
-Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command "cd ~; mkdir dev; cd dev" -CommandDescription "Clone git repo sppmodules" -User $($env:USERNAME)
+# install tools
+Install-Tool -DistributionNickname $DistributionNickname -Tools @("git", "curl")
+#Install-Tool-Docker -DistributionNickname $DistributionNickname -Username $($env:USERNAME)
+Install-Tool-Node -DistributionNickname $DistributionNickname -Username $($env:USERNAME)
+#Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command "cd ~; mkdir dev; cd dev; git clone -q https://${GitUser}:${GitPat}@github.com/${GitUser}/astrows.git" -CommandDescription "Clone ASTROWS git repo" -User $($env:USERNAME)
+#Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command 'cd ~/dev/ASTROWS && npm install --silent 2>&1 | grep -v "^npm notice"' -CommandDescription "npm install in ASTROWS" -User $($env:USERNAME)
+#Invoke-WSLCommand -DistributionNickname $DistributionNickname -Command 'cd ~/dev/ASTROWS && npx playwright install chromium' -CommandDescription "Install Playwright Chromium in ASTROWS" -User $($env:USERNAME)
 
-Write-Host "WSL configuration completed!" -ForegroundColor Green
-Write-Host "You can now work with the '$DistributionNickname' distribution." -ForegroundColor Cyan
-Write-Host "Start the distribution with: wsl -d $DistributionNickname" -ForegroundColor Cyan
+Write-Host "$(Get-Timestamp) WSL configuration completed!" -ForegroundColor Green
+Write-Host "$(Get-Timestamp) You can now work with the '$DistributionNickname' distribution." -ForegroundColor Cyan
+Write-Host "$(Get-Timestamp) Start the distribution with: wsl -d $DistributionNickname" -ForegroundColor Cyan

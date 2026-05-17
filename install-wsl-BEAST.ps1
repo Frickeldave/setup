@@ -47,7 +47,7 @@ if (-not $distributionInstalled) {
 Update-WSLSystem -DistributionNickname $DistributionNickname
 
 # Create WSL user with same name as current Windows user
-New-WSLUser -DistributionNickname $DistributionNickname -Username $($env:USERNAME) -SecString $SecString
+New-WSLUser -DistributionNickname $DistributionNickname -Username $($env:USERNAME) -SecString $SecString -AddToSudoers -SetAsDefault
 
 # install tools
 Install-Tool -DistributionNickname $DistributionNickname -Tools @("git", "curl", "python3", "ca-certificates", "gnupg", "chromium")

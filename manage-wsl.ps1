@@ -352,7 +352,9 @@ function New-WSLUser {
         [Parameter(Mandatory)]
         [string]$Username,
         [Parameter(Mandatory)]
-        [string]$SecString
+        [string]$SecString,
+        [switch]$AddToSudoers,
+        [switch]$SetAsDefault
     )
     
     Write-Host "$(Get-Timestamp) Creating user '$Username' in '$DistributionNickname'..." -ForegroundColor Cyan
@@ -364,6 +366,17 @@ function New-WSLUser {
         $command = "useradd -m -s /bin/bash ${Username} && echo '${Username}:${escapedSecString}' | chpasswd"
         wsl -d $DistributionNickname -u root -- bash -lc "$command"
         Write-Host "$(Get-Timestamp) User '$Username' created successfully." -ForegroundColor Green
+        if ($AddToSudoers) {
+            Write-Host "$(Get-Timestamp) Adding '$Username' to sudoers..." -ForegroundColor Cyan
+            wsl -d $DistributionNickname -u root -- bash -lc "usermod -aG sudo ${Username}"
+            Write-Host "$(Get-Timestamp) User '$Username' added to sudoers." -ForegroundColor Green
+        }
+        if ($SetAsDefault) {
+            Write-Host "$(Get-Timestamp) Setting '$Username' as default WSL user..." -ForegroundColor Cyan
+            wsl -d $DistributionNickname -u root -- bash -lc "printf '[user]\ndefault=${Username}\n' > /etc/wsl.conf"
+            wsl --terminate $DistributionNickname
+            Write-Host "$(Get-Timestamp) '$Username' set as default user. Distribution restarted." -ForegroundColor Green
+        }
     } catch {
         Write-Warning "$(Get-Timestamp) Error creating user: $_"
     }
